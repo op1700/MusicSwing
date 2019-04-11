@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>game</title>
+    <style>
+        #stage {
+            width:1200px;
+            height:700px;
+            background: url("./배경.jpg");
+            position: relative;
+        }
+        .music{
+            text-align: center;
+        }
+</style>
+    <script src="./src/common.js"></script>
+    <script src="./src/Enemy.js"></script>
+    <script src="./src/GameObject.js"></script>
+    <script src="./src/ObjectManager.js"></script>
+    <script>
+        var audioCtx = new (window.AudioContext || window.webkitAudioContext);
+        var stage;
+        var objectManager = new ObjectManager();
+        var hero;
+        var enemy = [];
+        var dataArray = [];
+        var v = 250; // 속도
+        function init() {
+            stage = document.getElementById("stage");
+            files = document.getElementById("files");
+            document.getElementById('files').addEventListener('change', handleFileSelect, false);
+            console.log('change');
+            // createHero();
+            gameLoop();
+        }
+
+
+        function createHero() {
+            hero = new Hero("HERO", stage, 560, 280, 70, 80, 0, 0, 0, 0, "", "./Mu.png");
+            objectManager.addObject(hero);
+        }
+
+
+        function playSound(arraybuffer) {
+            audioCtx.decodeAudioData(arraybuffer, function (buf) {
+                var source = audioCtx.createBufferSource();
+                var analyser = audioCtx.createAnalyser();
+                var bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                analyser.getByteTimeDomainData(dataArray);
+                source.connect(audioCtx.destination);
+                source.buffer = buf;
+                source.start(0);
+
+                var enemys = function createEnemy() {
+                    analyser.getByteTimeDomainData(dataArray);
+
+                    function start(i) {
+                        if (i < 2000) {
+                            i++;
+                            setTimeout(function () {
+                                var xx = getRandomByRange(10, 1100);
+                                var yy = getRandomByRange(10, 690);
+                                var k = getRandom(5);
+                                var sArray = [-1, 1,];
+                                var sArray2 = [-1, 0, 1,];
+                                var s = getRandom(2);
+                                var ss = getRandom(3);
+                                if (audioCtx.currentTime) {
+                                    enemy[i] = new Enemy("ENEMY", stage, xx, yy, 50, 50, sArray[s], sArray2[ss], 1, 1, "", "./enemy" + k + ".png");
+                                    objectManager.addObject(enemy[i]);
+                                }
+
+                                start(i);
+                            }, v);// 난이도
+                        }
+                    }
+                    start(0);
+
+                }
+                enemys();
+
+            });
+        }
+
+        function handleFileSelect(evt) {
+            var files = evt.target.files;
+            playFile(files[0]);
+            console.log(files[0]);
+        }
+
+        function playFile(file) {
+            var freader = new FileReader();
+            freader.onload = function (e) {
+                playSound(e.target.result);
+            };
+            freader.readAsArrayBuffer(file);
+        }
+
+        function control() {
+            var key = event.keyCode;
+            switch (key) {
+                case 37: hero.velX = -3; break;
+                case 39: hero.velX = 3; break;
+                case 38: hero.velY = -3; break;
+                case 40: hero.velY = 3; break;
+            }
+        }
+
+        function stop() {
+            if (event.keyCode != 32) {
+                if (event.keyCode == 37 || event.keyCode == 39) {
+                    hero.velX = 0;
+                }
+                if (event.keyCode == 38 || event.keyCode == 40) {
+                    hero.velY = 0;
+                }
+
+            }
+        }
+
+
+        function gameLoop() {
+            objectManager.tick();
+            objectManager.render();
+            setTimeout("gameLoop()");
+        }
+
+        addEventListener("load", function () {
+            init();
+        });
+    </script>
+</head>
+
+<body onKeyDown="control()" onKeyUp="stop()">
+    <div class="wrapper">
+        <div>
+            <div id="stage"></div>
+        </div>
+        <div class="music">
+            <input id="files" type="file" id="files" name="files[]" multiple />
+        </div>
+    </div>
+    </div>
+</body>
+
+</html>
